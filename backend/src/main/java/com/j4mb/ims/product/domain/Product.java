@@ -95,7 +95,7 @@ public class Product {
     public String getDescription() {return description;}
     public String getUnitOfMeasure() {return unitOfMeasure;}
     public int getQuantityOnHand() {return quantityOnHand;}
-    public int getReorderedLevel() {return reorderLevel;}
+    public int getReorderLevel() {return reorderLevel;}
     public boolean isActive() {return active;}
     public BigDecimal getUnitCost() {return unitCost;}
 

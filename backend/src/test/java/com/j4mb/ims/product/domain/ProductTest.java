@@ -126,7 +126,7 @@ public class ProductTest {
         assertEquals("New description", product.getDescription());
         assertEquals("BOX", product.getUnitOfMeasure());
         assertEquals(new BigDecimal("15.50"), product.getUnitCost());
-        assertEquals(8, product.getReorderedLevel());
+        assertEquals(8, product.getReorderLevel());
 
         // Updating details must not change stock or SKU.
         assertEquals("SKU-001", product.getSKU());
