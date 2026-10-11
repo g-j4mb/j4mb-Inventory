@@ -1,4 +1,4 @@
-# IMS — Inventory Management System
+# IMS — Inventory Management System 
 
 A full-stack inventory management application built with Java, Spring Boot, PostgreSQL, and React.
 
