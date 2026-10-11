@@ -103,4 +103,62 @@ public class ProductTest {
                 true
         );
     }
+    @Test
+    void shouldUpdateProductDetails() {
+        Product product = new Product(
+                "SKU-001",
+                "Old Name",
+                "Old description",
+                "PCS",20,
+                new BigDecimal("10.00"),
+                5,true
+        );
+
+        product.updateDetails(
+                "New Name",
+                "New description",
+                "box",
+                new BigDecimal("15.50"),
+                8
+        );
+
+        assertEquals("New Name", product.getName());
+        assertEquals("New description", product.getDescription());
+        assertEquals("BOX", product.getUnitOfMeasure());
+        assertEquals(new BigDecimal("15.50"), product.getUnitCost());
+        assertEquals(8, product.getReorderedLevel());
+
+        // Updating details must not change stock or SKU.
+        assertEquals("SKU-001", product.getSKU());
+        assertEquals(20, product.getQuantityOnHand());
+    }
+
+    @Test
+    void shouldNotUpdateProductWhenUnitCostIsNegative() {
+        Product product = new Product(
+                "SKU-001",
+                "Old Name",
+                null,
+                "PCS",
+                20,
+                new BigDecimal("10.00"),
+                5,
+                true
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> product.updateDetails(
+                        "New Name",
+                        null,
+                        "PCS",
+                        new BigDecimal("-1.00"),
+                        5
+                )
+        );
+
+        // Validation should happen before any fields are changed.
+        assertEquals("Old Name", product.getName());
+        assertEquals(new BigDecimal("10.00"), product.getUnitCost());
+    }
 }

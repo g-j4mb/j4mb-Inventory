@@ -8,7 +8,7 @@ public class Product {
     private final String sku;
     private  String name;
     private  String description;
-    private final String unitOfMeasure;
+    private  String unitOfMeasure;
     private BigDecimal unitCost;
     private int quantityOnHand;
     private  int reorderLevel;
@@ -29,6 +29,32 @@ public class Product {
         this.quantityOnHand = requireNonNegative(quantityOnHand, "Quantity on hand");
         this.reorderLevel = requireNonNegative(reorderLevel, "Reorder level");
         this.active = active;
+    }
+    public void updateDetails(
+            String name,
+            String description,
+            String unitOfMeasure,
+            BigDecimal unitCost,
+            int reorderLevel
+    ) {
+        // 1. Validate and normalize everything first.
+        String validatedName = requireText(name, "Product name");
+        String validatedDescription =
+                description == null ? null : description.trim();
+        String validatedUnitOfMeasure =
+                requireText(unitOfMeasure, "Unit of measure").toUpperCase();
+        BigDecimal validatedUnitCost =
+                requireNonNegative(unitCost, "Unit cost");
+        int validatedReorderLevel =
+                requireNonNegative(reorderLevel, "Reorder level");
+
+        // 2. Change the object only after all validations succeed.
+        this.name = validatedName;
+        this.description = validatedDescription;
+        this.unitOfMeasure = validatedUnitOfMeasure;
+        this.unitCost = validatedUnitCost;
+        this.reorderLevel = validatedReorderLevel;
+
     }
     private static  String requireText(String value,String field){
         if(value==null|| value.isEmpty()||value.trim().isEmpty()){
