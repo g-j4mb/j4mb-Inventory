@@ -1,5 +1,6 @@
 package com.j4mb.ims.product.infrastructure.adapter.out.persistence;
 
+import com.j4mb.ims.product.application.port.out.LoadProductsPort;
 import com.j4mb.ims.product.domain.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -147,5 +148,37 @@ class ProductPersistenceTest {
         assertFalse(loaded.isActive());
         assertEquals(8, loaded.getQuantityOnHand());
         assertEquals(1, repository.count());
+    }
+    @Test
+    void shouldReturnProductsInPages() {
+        adapter.save(new Product(
+                "SKU-101", "Keyboard", null,
+                "PCS", 10,new BigDecimal("25.00"),  2,true
+        ));
+        adapter.save(new Product(
+                "SKU-102", "Monitor", null,
+                "PCS",5, new BigDecimal("150.00"), 1,true
+        ));
+        adapter.save(new Product(
+                "SKU-103", "Mouse", null,
+                "PCS",20, new BigDecimal("12.00"), 5,true
+        ));
+
+        LoadProductsPort.ProductPageData firstPage = adapter.loadProducts(
+                new LoadProductsPort.ProductQueryData(0, 2, null, null, null)
+        );
+
+        LoadProductsPort.ProductPageData secondPage = adapter.loadProducts(
+                new LoadProductsPort.ProductQueryData(1, 2, null, null, null)
+        );
+
+        assertEquals(2, firstPage.products().size());
+        assertEquals(1, secondPage.products().size());
+        assertEquals(3, firstPage.totalElements());
+        assertEquals(2, firstPage.totalPages());
+
+        assertEquals("Keyboard", firstPage.products().get(0).getName());
+        assertEquals("Monitor", firstPage.products().get(1).getName());
+        assertEquals("Mouse", secondPage.products().get(0).getName());
     }
 }
