@@ -1,5 +1,6 @@
 package com.j4mb.ims.product.infrastructure.adapter.in.web;
 
+import com.j4mb.ims.product.application.exception.ProductNotFoundException;
 import com.j4mb.ims.product.application.port.in.*;
 import com.j4mb.ims.product.domain.Product;
 import com.j4mb.ims.product.infrastructure.adapter.out.persistence.ProductRepository;
@@ -185,5 +186,16 @@ public class ProductControllerTest {
     void shouldDeleteProductAndReturn204() throws Exception {
         mockMvc.perform(delete("/api/products/1"))
                 .andExpect(status().isNoContent());
+    }
+    @Test
+    void shouldReturn404WhenProductDoesNotExist() throws Exception {
+        when(getProductUseCase.getProduct(999L))
+                .thenThrow(new ProductNotFoundException(999L));
+
+        mockMvc.perform(get("/api/products/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.path").value("/api/products/999"));
     }
 }
