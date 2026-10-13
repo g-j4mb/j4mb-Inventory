@@ -3,7 +3,6 @@ package com.j4mb.ims.product.infrastructure.adapter.in.web;
 import com.j4mb.ims.product.application.exception.ProductNotFoundException;
 import com.j4mb.ims.product.application.port.in.*;
 import com.j4mb.ims.product.domain.Product;
-import com.j4mb.ims.product.infrastructure.adapter.out.persistence.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;

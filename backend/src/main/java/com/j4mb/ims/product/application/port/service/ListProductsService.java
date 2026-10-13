@@ -2,9 +2,11 @@ package com.j4mb.ims.product.application.port.service;
 
 import com.j4mb.ims.product.application.port.in.ListProductsUseCase;
 import com.j4mb.ims.product.application.port.out.LoadProductsPort;
+import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+@Service
 public class ListProductsService implements ListProductsUseCase {
     private static final int MAX_PAGE_SIZE = 100;
 

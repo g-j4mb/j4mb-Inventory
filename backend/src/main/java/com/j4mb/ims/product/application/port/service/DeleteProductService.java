@@ -5,9 +5,11 @@ import com.j4mb.ims.product.application.port.in.DeleteProductUseCase;
 import com.j4mb.ims.product.application.port.out.LoadProductPort;
 import com.j4mb.ims.product.application.port.out.SaveProductPort;
 import com.j4mb.ims.product.domain.Product;
+import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+@Service
 public class DeleteProductService implements DeleteProductUseCase {
 
     private final LoadProductPort loadProductPort;

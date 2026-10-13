@@ -4,9 +4,10 @@ import com.j4mb.ims.product.application.exception.ProductNotFoundException;
 import com.j4mb.ims.product.application.port.in.GetProductUseCase;
 import com.j4mb.ims.product.application.port.out.LoadProductPort;
 import com.j4mb.ims.product.domain.Product;
+import org.springframework.stereotype.Service;
 
 import java.util.Objects;
-
+@Service
 public class GetProductService implements GetProductUseCase {
 
     private final LoadProductPort loadProductPort;

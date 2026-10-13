@@ -5,9 +5,10 @@ import com.j4mb.ims.product.application.port.in.UpdateProductUseCase;
 import com.j4mb.ims.product.application.port.out.LoadProductPort;
 import com.j4mb.ims.product.application.port.out.SaveProductPort;
 import com.j4mb.ims.product.domain.Product;
+import org.springframework.stereotype.Service;
 
 import java.util.Objects;
-
+@Service
 public class UpdateProductService implements UpdateProductUseCase {
     private final LoadProductPort loadProductPort;
     private final SaveProductPort saveProductPort;

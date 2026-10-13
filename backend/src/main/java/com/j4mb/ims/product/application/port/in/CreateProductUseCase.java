@@ -5,7 +5,7 @@ import com.j4mb.ims.product.domain.Product;
 import java.math.BigDecimal;
 
 public interface CreateProductUseCase {
-    Product createProduct(CreateProductCommand command);
+    Product createProduct(CreateProductUseCase.CreateProductCommand command);
     record CreateProductCommand(
             String sku,
             String name,

@@ -3,9 +3,11 @@ package com.j4mb.ims.product.application.port.service;
 import com.j4mb.ims.product.application.port.in.CreateProductUseCase;
 import com.j4mb.ims.product.application.port.out.SaveProductPort;
 import com.j4mb.ims.product.domain.Product;
+import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+@Service
 public class CreateProductService implements CreateProductUseCase {
 private final SaveProductPort saveProductPort;
 public  CreateProductService(SaveProductPort saveProductPort) {
