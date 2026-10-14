@@ -1,219 +1,483 @@
-# IMS — Inventory Management System 
+# IMS — Inventory Management System
 
-A full-stack inventory management application built with Java, Spring Boot, PostgreSQL, and React.
+IMS is a full-stack inventory management application built with Java, Spring Boot, PostgreSQL, and React with TypeScript.
 
-IMS is designed to demonstrate maintainable backend engineering, domain-driven design principles, REST API development, database integrity, automated testing, and professional Git practices.
+The project demonstrates backend engineering practices, Domain-Driven Design (DDD), Ports and Adapters architecture, REST API development, JWT-based authentication, database migrations, and automated testing.
 
-&#x20; **Project status:** In development. Features and architecture are being implemented incrementally.
-
-## 
+**Project status:** In development. Product management and authentication are implemented; additional inventory workflows are planned.
 
 ## 1\. Business Overview
 
-IMS helps a single company manage its products, suppliers, purchasing, stock availability, and goods movement.
+IMS is designed for a single company that needs to manage products and inventory operations.
 
-The system supports the operational lifecycle of inventory, from ordering products from suppliers to receiving goods, reserving stock, dispatching goods, and processing returns.
+The current implementation focuses on product master data and authenticated API access. The broader business scope includes purchasing, stock availability, goods movement, and inventory control.
 
-### Business Scope
+### Implemented functionality
 
-* **Product Management:** Maintain product information, SKU, unit of measure, cost, and stock thresholds.
-* **Supplier Management:** Maintain supplier records and contact information.
-* **Purchase Orders:** Create and manage orders placed with suppliers.
-* **Goods Receiving:** Record full or partial deliveries against purchase orders.
-* **Stock Reservations:** Reserve available quantities for intended dispatch.
-* **Dispatch:** Record goods leaving inventory and fulfil reservations.
-* **Returns:** Record returned goods and determine whether they can be restocked.
-* **Inventory Visibility:** Monitor stock balances, available quantities, low-stock alerts, and operational activity.
+* **Product management:** Create, retrieve, update, and deactivate products.
+* **Product listing:** Search products and navigate through paginated results.
+* **Soft deletion:** Deactivated products are excluded from the active product listing rather than permanently deleted.
+* **Authentication:** Login using an email address and password.
+* **JWT security:** Issue signed access tokens and protect API endpoints using Spring Security.
+* **Database migrations:** Manage database schema changes using Flyway.
+* **Automated testing:** Test product domain rules, application services, web endpoints, persistence, and authentication logic.
 
-### Out of Scope
+### Planned functionality
 
-The initial version is limited to one company and excludes:
+The following business capabilities are part of the intended scope but are not yet fully implemented:
+
+* Supplier management workflows.
+* Purchase order management.
+* Full and partial goods receiving.
+* Stock reservations.
+* Dispatch and fulfilment.
+* Returns and restocking eligibility.
+* Stock movement history and inventory availability calculations.
+* Expanded inventory dashboard and operational workflows.
+
+### Out of scope for the initial version
 
 * Accounting ledger and financial accounting.
 * Invoicing and payment processing.
 * Multi-company and multi-warehouse management.
-* Advanced procurement and enterprise resource planning features.
+* Advanced procurement and enterprise resource planning functionality.
 
-## 
+## 2\. Architecture
 
-## 2\. Core Domain Concepts
+IMS follows **Ports and Adapters (Hexagonal Architecture)**, organized by business feature.
 
-The domain model represents business concepts and the rules governing inventory operations.
+The objective is to isolate business rules from infrastructure concerns and make application use cases independently testable.
 
-|Domain concept|Responsibility|
-|-|-|
-|Product|Defines an inventory item and its stock-keeping identity.|
-|Supplier|Represents a business supplying products.|
-|Purchase Order|Records products ordered from a supplier and their ordered quantities.|
-|Goods Receipt|Records quantities received against a purchase order, including partial deliveries.|
-|Inventory|Represents stock balances and the rules governing stock changes.|
-|Reservation|Allocates available stock for an intended dispatch.|
-|Dispatch|Records the fulfilment and physical issue of reserved stock.|
-|Return|Records goods returned after dispatch and their restocking eligibility.|
-|Stock Movement|Provides an operational history of receipts, dispatches, and inventory adjustments.|
+### Domain layer
 
-### Fundamental Inventory Rules
+Contains the business model and domain rules.
 
-* Available quantity = on-hand quantity − reserved quantity.
-* Reservations cannot exceed available stock.
-* Goods received cannot exceed the outstanding purchase order quantity.
-* Dispatches cannot exceed the eligible reserved quantity.
-* Returns must reference a valid dispatch and respect the eligible return quantity.
-* Damaged or rejected returns must not increase available stock.
-* Stock-changing operations must preserve data consistency and execute transactionally.
-* Normal business operations must never produce negative stock quantities.
+The domain layer should not depend on Spring Boot, JPA, HTTP, or database implementation details.
 
-Stock movements provide operational traceability; they are not an accounting ledger.
+### Application layer
 
-## 
+Contains application use cases and ports.
 
-## 3\. Architecture
+* **Input ports** define the operations exposed to inbound adapters.
+* **Output ports** define the capabilities required from external systems.
+* **Application services** coordinate use cases and domain behavior.
 
-IMS follows **Ports and Adapters (Hexagonal Architecture)**.
+### Infrastructure layer
 
-The objective is to keep business rules independent of frameworks, databases, and delivery mechanisms. Application use cases coordinate domain behavior through explicit ports, while adapters connect those ports to external systems.
+Contains adapters that connect the application to external technologies.
 
-### Architectural Layers
+* **Inbound adapters:** REST controllers and HTTP request/response handling.
+* **Outbound persistence adapters:** Spring Data JPA and PostgreSQL integration.
+* **Security adapters:** Password verification and JWT issuance.
+* **Configuration:** Spring application configuration and security setup.
 
-**Domain**
-
-* Business entities, value objects, domain rules, and domain policies.
-* No dependency on Spring Boot, JPA, HTTP, or database implementation details.
-
-**Application**
-
-* Use cases that coordinate business operations.
-* Input ports define operations exposed to delivery mechanisms.
-* Output ports define the external capabilities required by use cases.
-* Transaction boundaries are applied to appropriate business operations.
-
-**Adapters**
-
-* Inbound adapters: REST controllers and request/response mapping.
-* Outbound adapters: PostgreSQL persistence, repository implementations, and other external integrations.
-* Framework-specific configuration and security integrations.
-
-### Dependency Direction
+### Dependency direction
 
 ```text
-REST API
-   |
-   v
-Inbound Adapter
-   |
-   v
-Input Port
-   |
-   v
-Application Use Case
-   |
-   +----> Domain Model
-   |
-   +----> Output Port
-              ^
-              |
-       Persistence Adapter
-              |
-              v
-          PostgreSQL
+HTTP Client / React Frontend
+             |
+             v
+      Inbound Web Adapter
+             |
+             v
+         Input Port
+             |
+             v
+     Application Service
+             |
+       +-----+------+
+       |            |
+       v            v
+   Domain Model  Output Ports
+                      ^
+                      |
+              Outbound Adapters
+                      |
+                      v
+                  PostgreSQL
 ```
 
-Dependencies point inward toward application contracts and the domain. The domain does not depend on infrastructure.
+Application services depend on ports rather than directly on infrastructure implementations. Spring configuration connects the interfaces to their adapters at runtime.
 
-## 
+## 3\. Current Backend Package Structure
+
+The backend uses the root package `com.j4mb.ims`.
+
+```text
+backend/src/main/java/com/j4mb/ims/
+├── config/
+│   ├── SecurityConfiguration.java
+│   ├── JwtConfiguration.java
+│   └── AdminBootstrapConfiguration.java
+│
+├── identity/
+│   ├── domain/
+│   ├── application/
+│   │   ├── port/
+│   │   │   ├── in/
+│   │   │   └── out/
+│   │   └── service/
+│   └── infrastructure/
+│       └── adapter/
+│           ├── in/web/
+│           └── out/
+│               ├── persistence/
+│               └── security/
+│
+└── product/
+    ├── domain/
+    ├── application/
+    │   ├── exception/
+    │   ├── port/
+    │   │   ├── in/
+    │   │   └── out/
+    │   └── service/
+    └── infrastructure/
+        └── adapter/
+            ├── in/web/
+            └── out/persistence/
+```
+
+This tree summarizes the principal package boundaries; it is not an exhaustive list of source files.
+
+The `product` feature contains product-domain behavior, application use cases, REST endpoints, and persistence integration. The `identity` feature separates authentication logic from user persistence and security-specific implementations.
 
 ## 4\. Technology Stack
 
 |Component|Technology|
 |-|-|
-|Language|Java 25|
-|Backend framework|Spring Boot|
+|Language|Java 21|
+|Backend framework|Spring Boot 4.1.1|
 |Build tool|Maven|
 |API|REST / JSON|
 |Persistence|Spring Data JPA and Hibernate|
-|Database|PostgreSQL|
+|Database|PostgreSQL 17|
 |Database migrations|Flyway|
-|Frontend|React, TypeScript, Vite|
+|Frontend|React 19, TypeScript|
+|Frontend tooling|Vite|
 |Authentication|Spring Security and JWT|
-|Testing|JUnit 5, Mockito, integration tests|
-|API documentation|OpenAPI / Swagger|
+|Password hashing|BCrypt|
+|Automated testing|JUnit 5, Mockito, Spring test dependencies|
+|Database integration testing|Testcontainers|
 |Local database environment|Docker Compose|
 |Version control|Git and GitHub|
 
-The frontend and backend are separate applications. The frontend communicates with the backend through its REST API.
+The frontend and backend are separate applications. The frontend communicates with the backend through REST endpoints.
 
-## 
+## 5\. Authentication and Security
 
-## 5\. Repository Structure
+IMS uses stateless JWT-based authentication.
 
-```text
-IMS/
-├── backend/
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/stockflow/
-│       │   │   ├── domain/
-│       │   │   ├── application/
-│       │   │   ├── adapter/
-│       │   │   └── config/
-│       │   └── resources/
-│       │       └── db/migration/
-│       └── test/
-├── frontend/
-│   └── src/
-├── docs/
-│   ├── architecture.md
-│   ├── database-design.md
-│   └── screenshots/
-├── docker-compose.yml
-├── .env.example
-├── .gitignore
-└── README.md
+### Login flow
+
+1. The client submits an email address and password to `POST /api/auth/login`.
+2. The backend loads the corresponding user through an application port.
+3. The password verifier checks the supplied password against the stored password hash.
+4. If the account is active and the credentials are valid, the application issues a signed JWT.
+5. The client sends the token in the `Authorization` header when accessing protected endpoints.
+
+Example request header:
+
+```http
+Authorization: Bearer <access-token>
 ```
 
-This is the intended high-level structure. Package boundaries and module organization will be refined as use cases and domain responsibilities are implemented.
+### Security characteristics
 
-## 
+* Spring Security protects endpoints that require authentication.
+* Passwords are stored as BCrypt hashes rather than plaintext.
+* JWTs are signed using HS256.
+* The configured access-token lifetime is 900 seconds (15 minutes).
+* The issuer is configured as `IMS`.
+* Database-backed user persistence is separated from authentication use cases.
+* An optional development-only bootstrap mechanism can create an initial administrator account.
 
-## 6\. Development Roadmap
+The JWT signing secret must be supplied through environment configuration and must never be committed to source control.
 
-1. **Foundation:** Repository setup, Spring Boot, PostgreSQL, and Docker Compose.
-2. **Database:** Flyway migrations and the initial product and supplier schema.
-3. **Domain and application:** Domain models, ports, use cases, and persistence contracts.
-4. **REST API:** CRUD endpoints, DTOs, validation, error handling, and API documentation.
-5. **Authentication:** Registration, login, JWT, and protected endpoints.
-6. **Inventory workflows:** Purchase orders, partial receiving, reservations, dispatch, returns, and stock movement history.
-7. **Frontend:** Authentication, dashboard, master data, and operational workflows.
-8. **Quality and delivery:** Automated tests, security review, logging, responsive UI, documentation, and GitHub presentation.
+## 6\. Database and Persistence
 
-Each phase will be implemented, tested, reviewed, and committed before moving to the next.
+PostgreSQL is the primary database.
 
-## 
+Docker Compose provides the local PostgreSQL environment, while Flyway manages versioned database migrations.
 
-## 7\. Engineering Principles
+Hibernate schema generation is disabled through `ddl-auto: none`; schema changes are managed through migrations.
+
+The local database is exposed on `127.0.0.1:5434`, mapped to PostgreSQL's container port `5432`.
+
+A named Docker volume preserves database data across container restarts.
+
+## 7\. Testing Strategy
+
+The test suite is organized around the application and its architectural boundaries.
+
+Current test coverage includes:
+
+* **Domain tests:** Product-domain rules and behavior.
+* **Application service tests:** Product creation, retrieval, listing, updating, deletion, and authentication decisions.
+* **Web adapter tests:** Product controller behavior.
+* **Persistence tests:** Product persistence integration.
+* **Application context test:** Basic Spring Boot application initialization.
+
+Testcontainers is available for database-backed integration testing and requires Docker to be running.
+
+Run the complete backend test suite with:
+
+```powershell
+cd backend
+.\\mvnw.cmd test
+```
+
+Run a specific test class with:
+
+```powershell
+.\\mvnw.cmd "-Dtest=AuthenticateUserServiceTest" test
+```
+
+Only tests that actually exist and pass in the current checkout should be considered verified. Additional HTTP-level security tests can extend coverage of missing, malformed, expired, and valid JWTs.
+
+## 8\. Engineering Principles
 
 * Keep domain rules independent of infrastructure frameworks.
-* Express business operations as explicit application use cases.
+* Express business operations through explicit application use cases.
 * Define ports around application needs rather than database technology.
-* Enforce data integrity through domain rules and database constraints.
-* Use database transactions for operations that change stock.
-* Test business rules independently from infrastructure.
-* Use versioned database migrations instead of automatic schema generation.
+* Preserve clear dependency direction.
+* Use database migrations instead of automatic schema generation.
+* Enforce business invariants and database constraints.
+* Test business behavior independently from infrastructure where practical.
 * Keep secrets out of source control.
 * Maintain small, meaningful Git commits.
-* Document architectural decisions and important business rules.
+* Document implementation status honestly and distinguish completed work from planned features.
 
-## 
+## 9\. Installation and Setup
 
-## 8\. Setup and Execution
+The following instructions describe a local development setup on Windows using PowerShell.
 
-The local development environment uses Docker Compose for PostgreSQL and Maven for the backend. The frontend is developed and run independently.
+### Prerequisites
 
-Detailed prerequisites, environment configuration, database initialization, backend startup, frontend startup, test commands, and troubleshooting instructions will be added after the project setup is verified.
+Install the following tools:
 
-## 
+* Git
+* Java Development Kit (JDK) 21
+* Docker Desktop with Docker Compose
+* Node.js and npm compatible with the installed Vite version
 
-## 9\. Project Objective
+Verify the installations:
 
-IMS is a hands-on software engineering project intended to demonstrate the ability to design and implement a full-stack business application with explicit domain rules, clean architectural boundaries, reliable persistence, secure APIs, automated testing, and a professional development workflow.
+```powershell
+java -version
+git --version
+docker --version
+docker compose version
+node --version
+npm --version
+```
+
+### Step 1: Clone the repository
+
+```powershell
+git clone https://github.com/g-j4mb/j4mb-Inventory.git
+cd j4mb-Inventory
+```
+
+### Step 2: Configure environment variables
+
+Copy the example environment file:
+
+```powershell
+Copy-Item .env-example .env
+```
+
+Open `.env` and configure the following variables:
+
+```dotenv
+POSTGRES\_DB=ims
+POSTGRES\_USER=ims\_app
+POSTGRES\_PASSWORD=replace\_with\_a\_strong\_local\_password
+POSTGRES\_URL=jdbc:postgresql://localhost:5434/ims
+JWT\_SECRET\_BASE64=replace\_with\_generated\_base64\_secret
+BOOTSTRAP\_ADMIN\_ENABLED=false
+BOOTSTRAP\_ADMIN\_EMAIL=
+BOOTSTRAP\_ADMIN\_PASSWORD=
+```
+
+Generate a random 32-byte JWT signing secret in PowerShell:
+
+```powershell
+$bytes = New-Object byte\[] 32
+\[System.Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
+\[Convert]::ToBase64String($bytes)
+```
+
+Copy the resulting Base64 string into `JWT\_SECRET\_BASE64` in `.env`.
+
+Use a strong local database password for `POSTGRES\_PASSWORD`. Keep the database credentials and JWT signing secret private.
+
+**Important:** `.env` is for local use and must not be committed to Git. The example file is a template, not a file containing usable production credentials.
+
+### Step 3: Start PostgreSQL
+
+Make sure Docker Desktop is running, then execute this command from the repository root:
+
+```powershell
+docker compose up -d db
+```
+
+Check the database container:
+
+```powershell
+docker compose ps
+```
+
+Wait until the PostgreSQL health check reports that the database is healthy.
+
+The backend connects to the database using:
+
+```text
+jdbc:postgresql://localhost:5434/ims
+```
+
+### Step 4: Start the backend
+
+Open a terminal in the repository root and run:
+
+```powershell
+cd backend
+.\\mvnw.cmd spring-boot:run
+```
+
+The backend reads the environment variables from the process environment. If the application does not automatically receive variables from the root `.env` file, load them into the PowerShell session before starting it:
+
+```powershell
+Get-Content ..\\.env |
+    Where-Object { $\_ -match '^\\s\*\[A-Za-z\_]\[A-Za-z0-9\_]\*=' } |
+    ForEach-Object {
+        $name, $value = $\_ -split '=', 2
+        \[Environment]::SetEnvironmentVariable(
+            $name.Trim(),
+            $value.Trim(),
+            'Process'
+        )
+    }
+```
+
+Then run the Maven command again from the `backend` directory.
+
+The application starts on:
+
+```text
+http://localhost:8080
+```
+
+Flyway applies the configured database migrations during application startup.
+
+### Step 5: Configure the initial administrator (optional)
+
+If an initial administrator account is required, use the development-only bootstrap mechanism.
+
+Set these variables in the root `.env` file:
+
+```dotenv
+BOOTSTRAP\_ADMIN\_ENABLED=true
+BOOTSTRAP\_ADMIN\_EMAIL=admin@example.com
+BOOTSTRAP\_ADMIN\_PASSWORD=replace\_with\_a\_strong\_password
+```
+
+The bootstrap configuration is restricted to the `dev` Spring profile. To activate it, ensure that the backend starts with:
+
+```powershell
+$env:SPRING\_PROFILES\_ACTIVE = "dev"
+```
+
+Load the environment variables before launching the backend, and use a strong password that satisfies the bootstrap configuration's minimum length requirement.
+
+The bootstrap mechanism creates the account only when an account with that email does not already exist. Disable the bootstrap mechanism when it is no longer needed.
+
+### Step 6: Start the frontend
+
+Open a second PowerShell terminal:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+Vite starts the frontend development server and prints its local URL in the terminal, typically:
+
+```text
+http://localhost:5173
+```
+
+Keep the backend running while using the frontend. The Vite configuration proxies `/api` requests to the backend at `http://localhost:8080`.
+
+### Step 7: Build and lint the frontend
+
+From the `frontend` directory:
+
+```powershell
+npm run build
+npm run lint
+```
+
+The build command performs TypeScript checks and generates the production frontend assets.
+
+### Step 8: Run the backend tests
+
+From the repository root:
+
+```powershell
+cd backend
+.\\mvnw.cmd test
+```
+
+Docker Desktop must be running for tests that use Testcontainers.
+
+### Step 9: Stop the database
+
+When finished, run this command from the repository root:
+
+```powershell
+docker compose down
+```
+
+The named PostgreSQL volume is retained, so the database data remains available for the next run.
+
+To remove the database volume and its stored data as well, use the following command only when you intentionally want to reset the local database:
+
+```powershell
+docker compose down -v
+```
+
+### Troubleshooting
+
+**Database connection failure**
+
+* Confirm Docker Desktop is running.
+* Check `docker compose ps` and the PostgreSQL health status.
+* Verify `POSTGRES\_URL`, `POSTGRES\_DB`, `POSTGRES\_USER`, and `POSTGRES\_PASSWORD`.
+* Confirm port `5434` is available on the host.
+
+**Missing environment variables**
+
+* Ensure the root `.env` contains the required variables.
+* Ensure those variables are loaded into the PowerShell process that starts Spring Boot.
+* Verify `JWT\_SECRET\_BASE64` contains a valid Base64-encoded secret of at least 32 bytes after decoding.
+
+**Frontend API requests fail**
+
+* Confirm the backend is running on port `8080`.
+* Confirm the Vite proxy configuration targets `http://localhost:8080`.
+* Inspect the browser developer tools and backend logs for the specific request error.
+
+**Database migration fails**
+
+* Inspect the backend startup logs for the Flyway error.
+* Verify the database credentials and connectivity.
+* If the database has previously been initialized, do not delete the volume unless you intend to discard its data.
+
+## 10\. Project Objective
+
+IMS is an ongoing software engineering project intended to demonstrate the design and implementation of a full-stack business application with explicit domain boundaries, maintainable backend architecture, secure API access, reliable persistence, automated testing, and a professional development workflow.
+
+The project will continue to evolve as additional inventory use cases are implemented and tested.
 
