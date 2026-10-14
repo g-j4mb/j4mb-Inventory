@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getProducts } from '../services/productApi';
 import type { Product } from '../types/product';
 
-export function useProducts() {
+export function useProducts(accessToken: string) {
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -29,6 +29,7 @@ useEffect(() => {
 
       try {
         const result = await getProducts(
+              accessToken,
             search,
             page,
             pageSize,
@@ -62,7 +63,7 @@ useEffect(() => {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [search,page, pageSize, refreshKey]);
+  }, [accessToken,search,page, pageSize, refreshKey]);
 
   return {
   products,

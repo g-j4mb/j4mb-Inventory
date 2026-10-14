@@ -1,8 +1,14 @@
 import type { CreateProductRequest, ProductPage, UpdateProductRequest } from '../types/product';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+function authHeaders(accessToken: string): HeadersInit {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+  };
+}
 
 export async function getProducts(
+    accessToken: string,
   search = '',
     page = 0,
   size = 2,
@@ -21,7 +27,7 @@ export async function getProducts(
  params.set('activeOnly','true');
   const response = await fetch(
     `${API_BASE_URL}/products?${params.toString()}`,
-    { signal },
+    { headers: authHeaders(accessToken), signal, },
   );
 
   if (!response.ok) {
@@ -34,11 +40,12 @@ export async function getProducts(
 }
 
 export async function createProduct(
-  product: CreateProductRequest,
+  product: CreateProductRequest,accessToken:string,
 ): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/products`, {
     method: 'POST',
     headers: {
+     ...authHeaders(accessToken),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(product),
@@ -55,13 +62,14 @@ export async function createProduct(
 
 export async function updateProduct(
   id: number,
-  product: UpdateProductRequest,
+  product: UpdateProductRequest, accessToken: string
 ): Promise<void> {
   const response = await fetch(
     `${API_BASE_URL}/products/${id}`,
     {
       method: 'PUT',
       headers: {
+        ...authHeaders(accessToken),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(product),
@@ -77,10 +85,11 @@ export async function updateProduct(
   }
 }
 
-export async function deleteProduct(id: number): Promise<void> {
+export async function deleteProduct(id: number,accessToken: string): Promise<void> {
   const response = await fetch(
     `${API_BASE_URL}/products/${id}`,
     {
+        headers: authHeaders(accessToken),
       method: 'DELETE',
     },
   );

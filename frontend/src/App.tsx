@@ -16,8 +16,22 @@ import {   createProduct,
 import type {   CreateProductRequest,
   Product,
   UpdateProductRequest, } from './types/product';
-
+import LoginForm from './components/auth/LoginForm';
+import type { LoginResponse } from './services/authApi';
 function App() {
+  const [auth, setAuth] = useState<LoginResponse | null>(() => {
+  const savedToken = sessionStorage.getItem('accessToken');
+
+  if (!savedToken) {
+    return null;
+  }
+
+  return {
+    accessToken: savedToken,
+    tokenType: 'Bearer',
+    expiresIn: 900,
+  };
+});
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const emptyForm: CreateProductRequest = {
     sku: '',
@@ -44,7 +58,7 @@ function App() {
   setPageSize,
   totalPages,
   totalElements,
-} = useProducts();
+} = useProducts(auth?.accessToken ?? '');
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] =
@@ -73,10 +87,10 @@ function App() {
         reorderLevel: formData.reorderLevel,
       };
 
-      await updateProduct(editingProduct.id, updateData);
+      await updateProduct(editingProduct.id, updateData,auth!.accessToken);
       setSuccessMessage('Product updated successfully.');
     } else {
-      await createProduct(formData);
+      await createProduct(formData,auth!.accessToken);
       setSuccessMessage('Product created successfully.');
     }
 
@@ -129,7 +143,7 @@ async function handleDeleteProduct(product: Product) {
   setSuccessMessage(null);
 
   try {
-    await deleteProduct(product.id);
+    await deleteProduct(product.id,auth!.accessToken);
     setSuccessMessage('Product deleted successfully.');
     refreshProducts();
   } catch (err) {
@@ -138,8 +152,18 @@ async function handleDeleteProduct(product: Product) {
     );
   }
 }
-
+if (!auth) {
   return (
+    <LoginForm
+       onLoginSuccess={(result) => {
+        sessionStorage.setItem('accessToken', result.accessToken);
+        setAuth(result);
+      }}
+    />
+  );
+}
+  return (
+    
     <div className="app-layout">
       <Sidebar
         activePage={activePage}

@@ -16,6 +16,15 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+security:
+  jwt:
+    secret-base64: ${JWT_SECRET_BASE64}
+    issuer: IMS
+    access-token-ttl-seconds: 900
+  bootstrap-admin:
+    enabled: ${BOOTSTRAP_ADMIN_ENABLED:false}
+    email: ${BOOTSTRAP_ADMIN_EMAIL:}
+    password: ${BOOTSTRAP_ADMIN_PASSWORD:}
 
 server:
   port: 8080
